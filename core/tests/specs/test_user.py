@@ -30,7 +30,6 @@ def test_create_user(client):
     # Verification: Is it in base
     response = client.get(
         f"/core/user/get/?id={created_user['id']}",
-        content_type="application/json",
     )
 
     assert response.status_code == 200
@@ -38,6 +37,7 @@ def test_create_user(client):
         "id": created_user["id"],
         "username": "Bob",
         "email": "bob@example.com",
+        "is_company": False,
     }
 
 @pytest.mark.django_db
@@ -50,3 +50,35 @@ def test_get_my_profile__authenticated(user_bob):
     # Then
     assert response.status_code == 200
     assert response.json()["id"] == user_bob.id
+
+
+@pytest.mark.django_db
+def test_create_user__company_case(client):
+    # Given
+    user_payload = {
+        "name": "UGC",
+        "email": "ugc@ugc.com",
+	"password": "I_am_Bob",
+        "is_company": True,
+    }
+
+    # When
+    response = client.post(
+        "/core/user/create/",
+        user_payload,
+        content_type="application/json",
+    )
+    created_user = response.json()
+    response = client.get(
+        f"/core/user/get/?id={created_user['id']}",
+    )
+    
+    # Then
+    # Verification: Is it in base
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": created_user["id"],
+        "username": "UGC",
+        "email": "ugc@ugc.com",
+        "is_company": True
+    }

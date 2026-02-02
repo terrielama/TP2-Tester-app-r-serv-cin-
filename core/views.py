@@ -4,6 +4,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 
+from core import models
+
 # Create your views here.
 def hello(request):
     return JsonResponse({"hello": "world"})
@@ -24,10 +26,16 @@ def create_user(request):
         )
         user.save()
         
+        user_type = models.UserType(
+            user=user,
+            is_company=data.get("is_company", False),
+        )
+        user_type.save()
         return JsonResponse({
             "username": user.username,
             "email": user.email,
             "id": user.id,
+            "is_company": user_type.is_company,
         }, status=201)
 
 
@@ -41,6 +49,7 @@ def get_user(request):
             "username": user.username,
             "email": user.email,
             "id": user.id,
+            "is_company": user.user_type.first().is_company,
         })
     except User.DoesNotExist:
         return JsonResponse({'error':'not found'}, status=404)
@@ -54,10 +63,12 @@ def get_my_profile(request):
         )
 
     user = request.user
+
     return JsonResponse({
         "username": user.username,
         "email": user.email,
         "id": user.id,
+        "is_company": user.user_type.first().is_company,
     })
 
 
@@ -78,3 +89,30 @@ def login_view(request):
         return JsonResponse({"message": "Login successful"})
     else:
         return JsonResponse({"detail": "Invalid credentials"}, status=401)
+
+
+def create_theater(request):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"error": "Must be authenticated to see your profile"},
+            status=403,
+        )
+
+    user = request.user
+
+    if request.method == "POST":
+        data = json.loads(request.body)
+        
+        theater = models.Theater(
+            user=user,
+            name=data["name"],
+            address=data["address"],
+        )
+        theater.save()
+
+        return JsonResponse({
+            "name": theater.name,
+            "address": theater.address,
+            "id": theater.id,
+        }, status=201)
+

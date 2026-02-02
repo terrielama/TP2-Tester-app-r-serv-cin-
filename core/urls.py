@@ -32,4 +32,9 @@ urlpatterns = [
         views.login_view,
         name='login'
     ),
+    re_path(
+        r'^theater/create/$',
+        views.create_theater,
+        name='create_theater'
+    ),
 ]
