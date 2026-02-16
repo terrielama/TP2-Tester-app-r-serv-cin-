@@ -31,7 +31,6 @@ def create_user(request):
             "username": book_user.name,
             "email": book_user.email,
             "id": book_user.id,
-            "is_company": book_user.is_company,
         }, status=201)
 
 
@@ -45,7 +44,6 @@ def get_user(request):
             "username": user.name,
             "email": user.email,
             "id": user.id,
-            "is_company": user.is_company,
         })
     except models.BookUser.DoesNotExist:
         return JsonResponse({'error':'not found'}, status=404)
@@ -65,7 +63,6 @@ def get_my_profile(request):
         "username": user.name,
         "email": user.email,
         "id": user.id,
-        "is_company": user.is_company,
     })
 
 

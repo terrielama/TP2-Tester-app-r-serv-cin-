@@ -37,7 +37,6 @@ def test_create_user(client):
         "id": created_user["id"],
         "username": "Bob",
         "email": "bob@example.com",
-        "is_company": False,
     }
 
 @pytest.mark.django_db
