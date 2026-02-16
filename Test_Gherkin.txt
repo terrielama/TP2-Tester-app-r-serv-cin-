@@ -1,0 +1,125 @@
+Partie 1: Tests Gherkin
+ 
+Utilisateur normal peut :
+Créer un compte
+Voir les films
+Voir les séances
+Réserver une place
+ 
+Utilisateur "salle de cinéma" peut :
+Créer des salles
+Déclarer des séances
+Annuler des séances
+ 
+ 
+- Feature: User management
+ 
+  Scenario: Create a normal user
+    Given nothing
+    When user sends username, password and email
+    Then a normal account is created
+ 
+  Scenario: Create a company user
+    Given nothing
+    When user sends username, password, email and is_company=True
+    Then a "company" account is created
+ 
+  Scenario: Get user information
+    Given an existing user
+    When client requests user by id
+    Then user information is returned
+ 
+    specs/theater.spec
+    
+- Feature: Theater management
+ 
+  Scenario: Company user creates a theater
+    Given a company user
+    When user sends theater name, address and provider
+    Then a theater is created
+    And the theater belongs to the company user
+ 
+  Scenario: Normal user cannot create a theater
+    Given a normal user
+    When user sends theater name, address and provider
+    Then an error is returned
+ 
+ 
+Specs/show.spec (Séances)
+ 
+- Feature: Show management
+ 
+  Scenario: Company user declares a movie show
+    Given a company user with a theater
+    When user sends movie name, date and time
+    Then a show is created
+ 
+  Scenario: Company user cancels a show
+    Given an existing show
+    When company user cancels the show
+    Then the show is removed
+ 
+    specs/movie.spec
+ 
+- Feature: Movie listing
+ 
+  Scenario: User sees list of movies
+    Given several movies with shows
+    When user requests the list of movies
+    Then all movies currently playing are returned
+ 
+  Scenario: User sees theaters and schedules for a movie
+    Given a movie with several shows in different theaters
+    When user requests movie details
+    Then the list of theaters showing the movie is returned
+    And showtimes are displayed
+ 
+specs/booking.spec
+ 
+- Feature: Booking management
+ 
+  Scenario: User books a seat
+    Given a normal user
+    And an existing show
+    When user books one seat
+    Then booking is confirmed
+    And theater provider API is called
+ 
+  Scenario: Booking fails if provider refuses
+    Given a normal user
+    And an existing show
+    And provider API returns an error
+    When user books one seat
+    Then booking is refused
+ 
+Exemples de fournisseurs : MK2, UGC, Gaumont
+(Cas multi-fournisseurs)
+ 
+specs/provider.spec
+ 
+   - Feature: Provider API selection
+ 
+  Scenario: Booking calls MK2 API
+    Given a show provided by MK2
+    When user books a seat
+    Then MK2 API is called
+ 
+  Scenario: Booking calls UGC API
+    Given a show provided by UGC
+    When user books a seat
+    Then UGC API is called
+ 
+  Scenario: Booking calls Gaumont API
+    Given a show provided by Gaumont
+    When user books a seat
+    Then Gaumont API is called
+ 
+    -----> Cela couvre :
+Création utilisateurs (normal + company)
+Création salles
+Création / suppression séances
+Liste films
+Détail film avec horaires
+Réservation
+Mock fournisseur
+Sélection dynamique du bon fournisseur
