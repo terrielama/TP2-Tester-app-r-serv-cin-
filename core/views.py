@@ -3,9 +3,11 @@ from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 import json
 import json
-from core.models import Theater
+from core.models import Theater, Showtime
 from core import models
 from external_apis import mk2
+from django.utils.dateparse import parse_datetime
+from external_apis import mk2, ugc, gaumont
 
 
 # ---- Création d'un utilisateur ----
@@ -111,25 +113,41 @@ def login_view(request):
 
 
 # ---- Réserver une séance (appel API externe MK2)
+
 def book_movie(request):
-    # Vérifie que l'utilisateur est connecté
     if not request.user.is_authenticated:
-        return JsonResponse(
-            {"error": "Must be authenticated to book a seat"},
-            status=403,
-        )
+        return JsonResponse({"error": "Authentication required"}, status=403)
 
-    if request.method == "POST":
-        data = json.loads(request.body)
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
 
-        # Appel à l'API externe MK2
-        return JsonResponse(
-            mk2.book_seat(
-                theater_name="MK2 Gambetta",
-                movie_name=data["movie_name"],
-                date=data["date"],
-            )
-        )
+    data = json.loads(request.body)
+    showtime_id = data.get("showtime_id")
+    if not showtime_id:
+        return JsonResponse({"error": "showtime_id required"}, status=400)
+
+    try:
+        showtime = Showtime.objects.get(pk=showtime_id)
+    except Showtime.DoesNotExist:
+        return JsonResponse({"error": "Showtime not found"}, status=404)
+
+    # ---- Appel au bon fournisseur selon le champ provider
+    provider_api = {
+        "MK2": mk2,
+        "UGC": ugc,
+        "Gaumont": gaumont
+    }.get(showtime.provider)
+
+    if not provider_api:
+        return JsonResponse({"error": "Unknown provider"}, status=400)
+
+    result = provider_api.book_seat(
+        theater_name=showtime.theater.name,
+        movie_name=showtime.movie_name,
+        date=str(showtime.start_time)
+    )
+
+    return JsonResponse(result)
     
 # ---- Les utilisateurs de type "compagnie" puissent créer de nouvelles salles de cinéma ------
 
@@ -168,3 +186,82 @@ def create_theater(request):
         "name": theater.name,
         "address": theater.address,
     }, status=201)
+
+
+# ---- Company crée séance ---
+
+def create_showtime(request):
+    # ---- Vérif POST
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=403)
+
+    book_user = request.user.bookuser
+    if not book_user.is_company:
+        return JsonResponse({"error": "Only company users can create showtimes"}, status=403)
+
+    # ---- Lecture JSON
+    data = json.loads(request.body)
+    theater_id = data.get("theater_id")
+    movie_name = data.get("movie_name")
+    start_time = parse_datetime(data.get("start_time"))
+    provider = data.get("provider", "MK2")  # par défaut MK2
+
+    if not theater_id or not movie_name or not start_time:
+        return JsonResponse({"error": "theater_id, movie_name and start_time required"}, status=400)
+
+    # ---- Vérif que la salle appartient à ce company
+    try:
+        theater = Theater.objects.get(pk=theater_id, owner=book_user)
+    except Theater.DoesNotExist:
+        return JsonResponse({"error": "Theater not found or not owned"}, status=404)
+
+    # ---- Création de la séance
+    showtime = Showtime.objects.create(
+        theater=theater,
+        movie_name=movie_name,
+        start_time=start_time,
+        provider=provider
+    )
+
+    return JsonResponse({
+        "id": showtime.id,
+        "movie_name": showtime.movie_name,
+        "theater": theater.name,
+        "start_time": showtime.start_time.isoformat(),
+        "provider": showtime.provider
+    }, status=201)
+
+
+
+
+# ---- Utilisateur normal liste films ----
+def list_movies(request):
+    # ---- Tous les films avec leurs séances et salles
+    showtimes = Showtime.objects.select_related('theater').all()
+    movies = {}
+
+    for s in showtimes:
+        if s.movie_name not in movies:
+            movies[s.movie_name] = []
+
+        movies[s.movie_name].append({
+            "theater": s.theater.name,
+            "address": s.theater.address,
+            "start_time": s.start_time.isoformat(),
+            "provider": getattr(s.theater, "provider", "Unknown")
+        })
+
+    return JsonResponse(movies)
+
+
+
+
+
+
+
+# ---- Utilisateur réserve séance ----
+
+# ---- Multi-fournisseurs supportés via attribut provider ----

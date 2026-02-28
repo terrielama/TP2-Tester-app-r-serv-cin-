@@ -1,12 +1,13 @@
-# def book_seat(theater_name, date):
-#     """Faking an API to book a seat at an MK2 theather"""
-#     return {"sucess": True}
-
+# ---- Mock pour l'API UGC ----
 
 def book_seat(theater_name, movie_name, date):
+    """
+    Simule la réservation d'une séance UGC.
+    Toujours renvoie succès pour les tests.
+    """
     return {
         "success": True,
-        "provider": "MK2",
+        "provider": "UGC",
         "theater_name": theater_name,
         "movie_name": movie_name,
         "date": date,

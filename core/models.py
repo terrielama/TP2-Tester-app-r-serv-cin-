@@ -34,3 +34,13 @@ class Theater(models.Model):
 
     def __str__(self):
         return self.name
+    
+# --------- Showtime model  : Salle,Film et Heure de début---------
+class Showtime(models.Model):
+    theater = models.ForeignKey('Theater', on_delete=models.CASCADE)  
+    movie_name = models.CharField(max_length=255)                   
+    start_time = models.DateTimeField()                              
+    provider = models.CharField(max_length=50, default="MK2")  # MK2, UGC, Gaumont
+
+    def __str__(self):
+        return f"{self.movie_name} at {self.theater.name} ({self.start_time})"

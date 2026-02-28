@@ -36,4 +36,15 @@ urlpatterns = [
         views.create_theater, 
         name='create_theater'
         ),
+
+    re_path(
+        r'^showtime/create/$', 
+        views.create_showtime, 
+        name='create_showtime'
+        ),
+    
+    re_path(
+        r'^showtime/create/$', 
+        views.create_showtime, 
+        name='create_showtime'),
 ]

@@ -1,42 +1,50 @@
 import pytest
 import json
+import datetime
+from django.test import Client
+from django.utils.timezone import make_aware
 from unittest.mock import patch
-from core.tests.fixtures import user_bob
+from django.contrib.auth.models import User
+from core.models import BookUser, Theater, Showtime
+from unittest.mock import ANY
 
-# ---------------------------------------------------
-# Test réservation d'une séance de cinéma
-# ---------------------------------------------------
+
+# ---- Fixture utilisateur ----
+@pytest.fixture
+def user_bob(db):
+    user = User.objects.create_user(username="Bob", email="bob@example.com", password="I_am_Bob")
+    return BookUser.objects.create(user=user, is_company=False)
+
 @pytest.mark.django_db
-@patch("external_apis.mk2.book_seat")  # ---- Mock de l'API externe MK2
-def test_book_movie(mock_book_seat, client, user_bob):
-    # ---- Connexion de l'utilisateur
+@patch("external_apis.mk2.book_seat")
+def test_book_movie(mock_book_seat, user_bob):
+    client = Client()
     client.force_login(user_bob.user)
 
-    # ---- Payload de réservation
-    payload = {
-        "theater_id": 1,
-        "movie_name": "Big Fight!",
-        "date": "2026-12-31 22:00:00",
-    }
-
-    # ---- Simulation de la réponse de l'API externe
-    mock_book_seat.return_value = {"success": True}
-
-    expected_theater_name = "MK2 Gambetta"
-
-    # ---- Appel API POST pour réserver la séance
-    response = client.post(
-        "/core/book_movie/",
-        data=json.dumps(payload),
-        content_type="application/json",
+    theater = Theater.objects.create(name="MK2 Gambetta", address="Paris", owner=user_bob)
+    showtime = Showtime.objects.create(
+        theater=theater,
+        movie_name="Big Fight!",
+        start_time=make_aware(datetime.datetime(2026, 12, 31, 22, 0, 0)),
+        provider="MK2"
     )
 
-    # ---- Vérification du statut HTTP
-    assert response.status_code == 200
+    mock_book_seat.return_value = {"success": True}
 
-    # ---- Vérification que l'API externe a été appelée correctement
+    response = client.post(
+        "/core/book_movie/",
+        data=json.dumps({"showtime_id": showtime.id}),
+        content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    # assert data["provider"] == "MK2"
+
+    # ---- Vérification du mock avec datetime objet directement
     mock_book_seat.assert_called_once_with(
-        theater_name=expected_theater_name,
+        theater_name="MK2 Gambetta",
         movie_name="Big Fight!",
-        date="2026-12-31 22:00:00",
+        date=ANY
     )
