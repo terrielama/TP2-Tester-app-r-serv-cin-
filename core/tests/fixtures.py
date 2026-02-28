@@ -1,47 +1,42 @@
-from django.test import Client
 import pytest
+from django.contrib.auth.models import User
+from core.models import BookUser
 
-from core import models
 
+# ---- Fixture : utilisateur classique ----
 @pytest.fixture
 def user_bob(db):
-    user = models.User.objects.create_user(
-        username="bob",
-        email="bob@exampel.com",
+    # ---- Création du User Django (authentification) ----
+    user = User.objects.create_user(
+        username="Bob",
+        email="bob@example.com",
         password="I_am_Bob",
     )
-    user.save()
 
-    book_user = models.BookUser(
+    # ---- Création du profil métier BookUser ----
+    book_user = BookUser.objects.create(
         user=user,
+        is_company=False,  # ---- Utilisateur simple ----
     )
-    book_user.save()
-
-    auth_client = Client()
-    auth_client.force_login(user)
-
-    book_user.client = auth_client
 
     return book_user
 
 
+# ----------- Fixture : utilisateur propriétaire (Company) ----
+
 @pytest.fixture
 def user_company(db):
-    user = models.User.objects.create_user(
-        username="UGC",
-        email="ugc@ugc.com",
-        password="I_am_Bob",
+    # ---- Création du User Django ----
+    user = User.objects.create_user(
+        username="CinemaOwner",
+        email="owner@example.com",
+        password="secure_password",
     )
-    user.save()
 
-    book_user = models.BookUser(
+    # ---- Création du BookUser avec rôle propriétaire ----
+    book_user = BookUser.objects.create(
         user=user,
+        is_company=True,  # ---- Indique qu'il peut créer des salles ----
     )
-    book_user.save()
-
-    auth_client = Client()
-    auth_client.force_login(user)
-
-    book_user.client = auth_client
 
     return book_user
