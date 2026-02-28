@@ -5,12 +5,13 @@ A faire :
 2. Partie Implémentation : Modèles, Fixtures, Views, URLs, Tests unitaires
 3. Fonctionnalités actuelles
 
-Suite : 
-4. Un utilisateur propriétaire de salle de cinéma :
+Implémentation #1: Un utilisateur propriétaire de salle de cinéma :
 			Étape 1 : Séparer les rôles utilisateurs
 			Étape 2 : Créer une salle de cinéma
 			Étape 3 : Ajouter les séances
 
+Implémentation #2: Déclarer une salle de cinéma
+On veut maintenant qu'un utilisateur propriétaire de salles puisse déclarer ses salles.
 -------------------------
 
 Groupe : Mathilde DELEKTA
@@ -43,4 +44,5 @@ uv run pytest
 - Les tests vérifient création d’utilisateur, profil, salle et réservation.
 
 Fonctionne avec pytest : uv run pytest
+
 
