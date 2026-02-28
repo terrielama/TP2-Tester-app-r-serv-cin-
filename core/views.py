@@ -10,16 +10,16 @@ from django.utils.dateparse import parse_datetime
 from external_apis import mk2, ugc, gaumont
 
 
-# ---- Création d'un utilisateur ----
+# ---------- Création d'un utilisateur ----------
 def create_user(request):
     if request.method == "POST":
         data = json.loads(request.body)
 
-        # ---- Vérifie que l'email est fourni ----
+        # Vérifie que l'email est fourni
         if not data.get("email"):
             return JsonResponse({"error": "Email required"}, status=400)
 
-        # ---- Création du User Django (authentification) ----
+        # Création du User Django (authentification)
         user = models.User.objects.create_user(
             username=data["name"],
             email=data["email"],
@@ -27,11 +27,11 @@ def create_user(request):
         )
         user.save()
 
-        # ---- Création du BookUser ----
+        # Création du BookUser
         book_user = models.BookUser(user=user)
         book_user.save()
 
-        # ---- Retour des infos utilisateur ----
+        #  Retour des infos utilisateur 
         return JsonResponse(
             {
                 "username": book_user.name,
@@ -42,18 +42,18 @@ def create_user(request):
         )
 
 
-# ---- Récupérer un utilisateur par ID ----
+#  Récupérer un utilisateur par ID 
 def get_user(request):
     user_id = request.GET.get("id")
 
-    # ---- Vérifie que l'id est fourni ----
+    # Vérifie que l'id est fourni 
     if not user_id:
         return JsonResponse({"error": "id required"}, status=400)
 
     try:
         user = models.BookUser.objects.get(pk=user_id)
 
-        # ---- Retour des infos utilisateur ----
+        # Retour des infos utilisateur 
         return JsonResponse(
             {
                 "username": user.name,
@@ -66,19 +66,19 @@ def get_user(request):
         return JsonResponse({"error": "not found"}, status=404)
 
 
-# ---- Profil de l'utilisateur connecté ----
+# ---------- Profil de l'utilisateur connecté ----------
 def get_my_profile(request):
-    # Vérifie que l'utilisateur est connecté ----
+    # Vérifie que l'utilisateur est connecté
     if not request.user.is_authenticated:
         return JsonResponse(
             {"error": "Must be authenticated to see your profile"},
             status=403,
         )
 
-    # ---- Récupère le BookUser lié au User ----
+    # Récupère le BookUser lié au User
     user = request.user.bookuser
 
-    # ---- Retour des infos du profil ----
+    #  Retour des infos du profil
     return JsonResponse(
         {
             "username": user.name,
@@ -95,14 +95,14 @@ def login_view(request):
     username = data.get("username")
     password = data.get("password")
 
-    # ---- Vérifie que username et password sont fournis ----
+    # Vérifie que username et password sont fournis
     if not username or not password:
         return JsonResponse(
             {"detail": "Username and password are required."},
             status=400,
         )
 
-    # ---- Authentification ----
+    #  Authentification
     user = authenticate(request, username=username, password=password)
 
     if user is not None:
@@ -112,7 +112,7 @@ def login_view(request):
         return JsonResponse({"detail": "Invalid credentials"}, status=401)
 
 
-# ---- Réserver une séance (appel API externe MK2)
+# Réserver une séance (appel API externe MK2)
 
 def book_movie(request):
     if not request.user.is_authenticated:
@@ -131,7 +131,7 @@ def book_movie(request):
     except Showtime.DoesNotExist:
         return JsonResponse({"error": "Showtime not found"}, status=404)
 
-    # ---- Appel au bon fournisseur selon le champ provider
+    # Appel au bon fournisseur selon le champ provider
     provider_api = {
         "MK2": mk2,
         "UGC": ugc,
@@ -150,22 +150,21 @@ def book_movie(request):
     return JsonResponse(result)
     
 # ---- Les utilisateurs de type "compagnie" puissent créer de nouvelles salles de cinéma ------
-
 def create_theater(request):
-    # ---- Vérification méthode POST ----
+    # Vérification méthode POST 
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
-    # ---- Vérification de l'authentification ----
+    # Vérification de l'authentification 
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Authentication required"}, status=403)
 
-    # ---- Vérification que l'utilisateur est une compagnie ----
+    # Vérification que l'utilisateur est une compagnie
     book_user = request.user.bookuser
     if not book_user.is_company:
         return JsonResponse({"error": "Only company users can create theaters"}, status=403)
 
-    # ---- Lecture du payload JSON ----
+    # Lecture du payload JSON
     data = json.loads(request.body)
     name = data.get("name")
     address = data.get("address")
@@ -173,14 +172,14 @@ def create_theater(request):
     if not name or not address:
         return JsonResponse({"error": "Name and address are required"}, status=400)
 
-    # ---- Création du théâtre ----
+    # Création du théâtre 
     theater = Theater.objects.create(
         name=name,
         address=address,
         owner=book_user
     )
 
-    # ---- Réponse JSON ----
+    # Réponse JSON 
     return JsonResponse({
         "id": theater.id,
         "name": theater.name,
@@ -188,10 +187,9 @@ def create_theater(request):
     }, status=201)
 
 
-# ---- Company crée séance ---
-
+# ---------- Company crée séance ---------
 def create_showtime(request):
-    # ---- Vérif POST
+    # Vérif POST
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -202,7 +200,7 @@ def create_showtime(request):
     if not book_user.is_company:
         return JsonResponse({"error": "Only company users can create showtimes"}, status=403)
 
-    # ---- Lecture JSON
+    # Lecture JSON
     data = json.loads(request.body)
     theater_id = data.get("theater_id")
     movie_name = data.get("movie_name")
@@ -212,13 +210,13 @@ def create_showtime(request):
     if not theater_id or not movie_name or not start_time:
         return JsonResponse({"error": "theater_id, movie_name and start_time required"}, status=400)
 
-    # ---- Vérif que la salle appartient à ce company
+    # Vérif que la salle appartient à ce company
     try:
         theater = Theater.objects.get(pk=theater_id, owner=book_user)
     except Theater.DoesNotExist:
         return JsonResponse({"error": "Theater not found or not owned"}, status=404)
 
-    # ---- Création de la séance
+    #  Création de la séance
     showtime = Showtime.objects.create(
         theater=theater,
         movie_name=movie_name,
@@ -239,7 +237,7 @@ def create_showtime(request):
 
 # ---- Utilisateur normal liste films ----
 def list_movies(request):
-    # ---- Tous les films avec leurs séances et salles
+    # Tous les films avec leurs séances et salles
     showtimes = Showtime.objects.select_related('theater').all()
     movies = {}
 
@@ -257,11 +255,24 @@ def list_movies(request):
     return JsonResponse(movies)
 
 
+# ---------- retourner toutes les salles qui le diffusent avec les horaires ----------
+def list_showtimes_for_movie(request):
+    # Récupérer le nom du film depuis les query params
+    movie_name = request.GET.get("movie_name")
+    if not movie_name:
+        return JsonResponse({"error": "movie_name is required"}, status=400)
 
+    # Filtrer les séances du film
+    showtimes = Showtime.objects.filter(movie_name=movie_name).select_related('theater')
 
-
-
-
-# ---- Utilisateur réserve séance ----
-
-# ---- Multi-fournisseurs supportés via attribut provider ----
+    # Construire la réponse JSON
+    data = [
+        {
+            "theater_name": s.theater.name,
+            "address": s.theater.address,
+            "start_time": s.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "provider": s.provider
+        }
+        for s in showtimes
+    ]
+    return JsonResponse(data, safe=False)

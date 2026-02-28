@@ -47,4 +47,10 @@ urlpatterns = [
         r'^showtime/create/$', 
         views.create_showtime, 
         name='create_showtime'),
+
+     re_path(
+        r'^showtimes/$', 
+        views.list_showtimes_for_movie, 
+        name='list_showtimes_for_movie'
+        ),
 ]
