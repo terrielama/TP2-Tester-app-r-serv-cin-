@@ -1,5 +1,8 @@
 # TP – Gestion de Cinéma avec Django et Tests Automatisés
 
+Groupe : Mathilde DELEKTA,  Wallen JEAN MARIE ALPHONSINE, Terrie LAMA
+------------------------------------------------------------
+
 ## A faire :
 
 1. Partie tests Gherkin
@@ -45,7 +48,6 @@ Tests fonctionnels avec pytest et Django :
 Fonctionnalités actuelles :
 
 1) Un propriétaire de cinéma peut créer ses salles (Theater) et ajouter des séances (Showtime).
-
 2) Un utilisateur classique peut :
 	- Voir la liste des films à l’affiche
 	- Voir pour chaque film les salles qui le diffusent et leurs horaires
@@ -55,25 +57,16 @@ Fonctionnalités actuelles :
 
 Implémentation #1 : Gestion des rôles et création de salles
 
-Étape 1 : Séparer les rôles utilisateurs (user_bob vs user_company)
-
-Étape 2 : Créer une salle de cinéma (Theater)
-
-Étape 3 : Ajouter les séances (Showtime)
+- Étape 1 : Séparer les rôles utilisateurs (user_bob vs user_company)
+- Étape 2 : Créer une salle de cinéma (Theater)
+- Étape 3 : Ajouter les séances (Showtime)
 
 ------------------------------------------------------------
 
 Implémentation #2 : Déclarer une salle de cinéma
 
-Permet à un utilisateur propriétaire de déclarer ses salles via /core/theater/create/.
-
-Les tests unitaires vérifient la création correcte de la salle et l’association avec le propriétaire.
-
-------------------------------------------------------------
-
-Groupe : Mathilde DELEKTA
-		 Wallen JEAN MARIE ALPHONSINE
-		 Terrie LAMA
+- Permet à un utilisateur propriétaire de déclarer ses salles via /core/theater/create/.
+- Les tests unitaires vérifient la création correcte de la salle et l’association avec le propriétaire.
 
 ------------------------------------------------------------
 
@@ -89,6 +82,7 @@ uv run python manage.py migrate
 
 - Run les test
 uv run pytest
+
 
 
 
