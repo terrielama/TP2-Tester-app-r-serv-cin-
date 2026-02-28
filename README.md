@@ -1,5 +1,6 @@
 #TP – Gestion de Cinéma avec Django et Tests Automatisés
-A faire
+
+##A faire :
 
 1. Partie tests Gherkin
 Définir les scénarios pour les fonctionnalités principales :
@@ -88,6 +89,7 @@ uv run python manage.py migrate
 
 - Run les test
 uv run pytest
+
 
 
 
